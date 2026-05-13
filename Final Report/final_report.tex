@@ -1,0 +1,350 @@
+\documentclass[14pt,a4paper]{extarticle}
+
+\usepackage[a4paper,top=2.54cm,bottom=2.54cm,left=2.54cm,right=2.54cm]{geometry}
+\usepackage{fontspec}
+\usepackage{polyglossia}
+\setdefaultlanguage{thai}
+\setotherlanguage{english}
+\setmainfont{TH Sarabun New}
+\newfontfamily\englishfont{TH Sarabun New}
+\newfontfamily\thaifonttt{TH Sarabun New}
+\setmonofont{TH Sarabun New}
+
+\usepackage{amsmath,amssymb,amsfonts}
+\DeclareMathSizes{14}{11.5}{8}{6}
+\DeclareMathSizes{14.4}{11.5}{8}{6}
+\usepackage{array}
+\usepackage{booktabs}
+\usepackage{longtable}
+\usepackage{multirow}
+\usepackage{graphicx}
+\usepackage{xcolor}
+\usepackage{enumitem}
+\usepackage{titlesec}
+\usepackage{fancyhdr}
+\usepackage{setspace}
+\usepackage{caption}
+\usepackage{float}
+\usepackage{hyperref}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta,positioning,shapes.geometric}
+
+\XeTeXlinebreaklocale "th"
+\XeTeXlinebreakskip = 0pt plus 1pt
+\emergencystretch=2em
+
+\setstretch{1.15}
+\setlength{\parindent}{1.25cm}
+\setlength{\parskip}{0.15em}
+\setlist{nosep,leftmargin=1.2cm}
+
+\titleformat{\section}{\Large\bfseries}{\thesection}{0.6em}{}
+\titleformat{\subsection}{\large\bfseries}{\thesubsection}{0.6em}{}
+\titleformat{\subsubsection}{\normalsize\bfseries}{\thesubsubsection}{0.6em}{}
+
+\captionsetup{font=small,labelfont=bf}
+\renewcommand{\figurename}{รูปที่}
+\renewcommand{\tablename}{ตารางที่}
+
+\pagestyle{fancy}
+\setlength{\headheight}{17pt}
+\fancyhf{}
+\lhead{รายงานสรุปผลการศึกษา Enhancement FrodoKEM Using PQC-QKD Hybrid}
+\rhead{\thepage}
+\renewcommand{\headrulewidth}{0.4pt}
+
+\hypersetup{
+    colorlinks=true,
+    linkcolor=black,
+    citecolor=black,
+    urlcolor=blue!50!black,
+    pdftitle={กรอบแนวคิดการผสาน E91-QKD กับ FrodoKEM บนฐาน LWE เพื่อเสริมความมั่นคงของการแลกเปลี่ยนคีย์},
+    pdfauthor={พอฤทัย ชินกาญจนโรจน์}
+}
+
+\newcommand{\eng}[1]{\textenglish{#1}}
+\newcommand{\code}[1]{\texttt{#1}}
+\newcommand{\term}[1]{\textbf{#1}}
+\newcommand{\suppfile}[1]{\textbf{Supplementary File #1}}
+
+\begin{document}
+
+\begin{titlepage}
+    \centering
+    \vspace*{2.0cm}
+    {\Large \textbf{รายงานสรุปการศึกษา}\par}
+    \vspace{-0.1cm}
+    {\textbf{\Large รายวิชา \eng{Individual Study in Computer Engineering II}}\par}
+
+    \vspace{3cm}
+    {\large กรอบแนวคิดการผสาน \eng{E91-QKD} กับ \eng{FrodoKEM} บนฐาน \eng{LWE}\par}
+    \vspace{-0.2cm}
+    {\large เพื่อเสริมความมั่นคงของการแลกเปลี่ยนคีย์\par}
+    \vspace{0.2cm}
+    {\large \eng{A Hybrid E91-QKD and LWE-Based FrodoKEM Framework}\par}
+    \vspace{-0.2cm}
+    {\large \eng{for Enhanced Key Exchange Security}\par}
+
+    \vspace{2.0cm}
+    {\large จัดทำโดย\par}
+    \vspace{0.45cm}
+    {\large น.ส.พอฤทัย ชินกาญจนโรจน์\par}
+    \vspace{-0.2cm}
+    {\large รหัสประจำตัวนิสิต 6730356221\par}
+    
+      \vspace{1.5cm}
+    {\large อาจารย์ที่ปรึกษาในรายวิชา\par}
+    \vspace{0.1cm}
+    {\large อ.ดร.กมลลักษณ์ สุขเสน\par}
+
+    \vfill
+    {\large วันที่จัดทำ: \today\par}
+\end{titlepage}
+
+\pagenumbering{roman}
+\section*{คำนำ}
+\addcontentsline{toc}{section}{คำนำ}
+รายงานฉบับนี้จัดทำขึ้นเพื่อสรุปภาพรวมงานศึกษาที่เกี่ยวข้องกับการนำแนวคิด \eng{Quantum Key Distribution} หรือ \eng{QKD} มาประกอบกับระบบเข้ารหัสหลังยุคควอนตัม โดยมี \eng{FrodoKEM} และปัญหา \eng{Learning With Errors} เป็นแกนหลัก จุดตั้งต้นของงานไม่ใช่เพียงการเพิ่มความซับซ้อนให้กับโปรโตคอล แต่เป็นการตั้งคำถามว่า หากต้องการให้ QKD ถูกใช้ในเครือข่ายจริงมากขึ้น จะสามารถลดภาระของการแลกเปลี่ยนคีย์ควอนตัมแบบ \eng{peer-to-peer} ตลอดเวลาได้อย่างไร
+
+แนวคิดที่ผู้ทำการศึกษาสังเคราะห์ขึ้นคือการใช้ QKD เป็นแหล่งเอนโทรปีที่น่าเชื่อถือ แล้วขยายผลผ่านกลไก \eng{PQC} ที่อยู่บนฐานความยากเชิงคณิตศาสตร์ของแลตทิซ กล่าวคือใช้ผลลัพธ์จาก \eng{E91} เพื่อสร้างเมทริกซ์ \eng{Masked-Salting} และนำไปปรับเมทริกซ์ฐานของ FrodoKEM จาก $A$ เป็น $A' = A + M \pmod q$ รายงานนี้จึงนำเสนอทั้งเส้นทางการศึกษา แนวคิดโปรโตคอล ต้นแบบการทดลอง และข้อจำกัดที่ต้องพัฒนาต่ออย่างตรงไปตรงมา
+
+ผู้ทำการศึกษาหวังว่ารายงานฉบับนี้จะเป็นฐานสำหรับการพัฒนางานต่อ ทั้งในเชิงทฤษฎี การทดลองด้านความปลอดภัย และการออกแบบระบบเครือข่ายที่ใช้ QKD ร่วมกับ PQC ได้จริงในอนาคต
+
+\clearpage
+\tableofcontents
+\clearpage
+\pagenumbering{arabic}
+
+\section{บทนำ}
+\subsection{ที่มาและความสำคัญ}
+ระบบเข้ารหัสในยุคปัจจุบันกำลังเผชิญความเปลี่ยนแปลงจากสองทิศทางพร้อมกัน ทิศทางแรกคือการพัฒนา \eng{Quantum Computer} ซึ่งทำให้อัลกอริทึมแบบดั้งเดิมจำนวนมากไม่เพียงพอต่อการป้องกันข้อมูลระยะยาว ทิศทางที่สองคือการพัฒนา \eng{Quantum Key Distribution} ซึ่งใช้คุณสมบัติทางฟิสิกส์ควอนตัมเพื่อสร้างคีย์ร่วมและตรวจจับการดักฟังได้โดยตรง
+
+อย่างไรก็ตาม QKD ยังมีข้อจำกัดเชิงระบบ เช่น ระยะทาง ความเสถียรของช่องสัญญาณ ต้นทุนฮาร์ดแวร์ และภาระในการเชื่อมต่อแบบ \eng{peer-to-peer} หากต้องส่งคีย์ควอนตัมระหว่างทุกคู่โหนดตลอดเวลา งานศึกษานี้จึงตั้งโจทย์ว่าควรใช้ QKD ในบทบาทที่เกิดประโยชน์สูงสุด กล่าวคือใช้เป็นแหล่งเอนโทรปีหรือ seed ที่มีความน่าเชื่อถือ แล้วนำไปขยายผลด้วย \eng{Post-Quantum Cryptography} โดยเฉพาะกลุ่มแลตทิซ เช่น \eng{LWE} และ FrodoKEM
+
+แก่นของข้อเสนอคือการสร้างเมทริกซ์ $M$ จาก seed ที่ได้จาก \eng{E91} แล้วใช้ $M$ เป็น \eng{Masked-Salting} เพื่อเปลี่ยนเมทริกซ์ฐานของ FrodoKEM จาก
+\[
+    A \quad \longrightarrow \quad A' = A + M \pmod q
+\]
+โดยที่ $A$ คือเมทริกซ์ฐานของ FrodoKEM, $M$ คือเมทริกซ์ที่สร้างจาก seed ของ QKD, $A'$ คือเมทริกซ์ฐานที่ถูกปรับด้วย \eng{Masked-Salting} และ $q$ คือโมดูลัสของระบบ
+หาก Alice และ Bob มี seed เดียวกัน ทั้งสองฝ่ายสามารถสร้าง $M$ และ $A'$ ได้ตรงกัน ในขณะที่ผู้โจมตีซึ่งเห็นเพียงข้อมูลสาธารณะต้องเผชิญทั้งความยากของ LWE และความไม่แน่นอนของเมทริกซ์ที่ถูกเติม salt
+
+\subsection{วัตถุประสงค์}
+\begin{enumerate}
+    \item ศึกษาพื้นฐานของ QKD ตั้งแต่ BB84 ไปจนถึง E91 และบริบทของเครือข่ายควอนตัม
+    \item ศึกษา FrodoKEM และแนวคิดความมั่นคงบนฐานปัญหา LWE/แลตทิซ
+    \item เสนอแนวคิด \eng{Hybrid PQC--QKD} ที่ใช้ QKD เป็นแหล่งเอนโทรปี และใช้ PQC ลดภาระการส่งคีย์ควอนตัมตลอดเวลา
+    \item ออกแบบกลไก \eng{Masked-Salting} เพื่อสร้าง $A' = A + M \pmod q$
+    \item ทดลองสร้างต้นแบบระดับ \eng{toy model} เพื่อศึกษาสมการ $B = AS + E \pmod q$ และการโจมตีแบบ brute force ในมิติเล็ก
+    \item วางแนวทางประเมินความปลอดภัยในหลายระดับ ได้แก่ exhaustive search, BKZ, hybrid attack และ basis distortion
+\end{enumerate}
+
+\subsection{ขอบเขตของรายงาน}
+รายงานฉบับนี้สรุปทั้งส่วนที่เป็นแนวคิดและส่วนที่ได้ทดลองจริง โดยแยกให้ชัดเจนว่าต้นแบบที่ควรแนบเป็น source package ผ่าน Git หรือ archive แยกจาก PDF supplementary files เป็นเพียงแบบจำลองขนาดเล็กของความสัมพันธ์แบบ LWE ที่ได้รับแรงบันดาลใจจาก FrodoKEM ไม่ใช่ implementation เต็มของ FrodoKEM และยังไม่มีการจำลอง E91/QKD จริงในระดับโค้ด
+
+\section{พื้นฐานที่เกี่ยวข้อง}
+\subsection{จาก BB84 สู่ E91}
+การศึกษาเริ่มจาก BB84 ซึ่งใช้การเลือกฐานการวัดแบบสุ่มระหว่าง Alice และ Bob หาก Eve พยายามวัดสถานะควอนตัมโดยไม่ทราบฐานที่ถูกต้อง การวัดจะรบกวนสถานะและทำให้เกิดความผิดพลาดที่ตรวจจับได้ผ่าน \eng{Quantum Bit Error Rate} หรือ QBER หลักการนี้ทำให้ QKD ต่างจากการแลกคีย์แบบดั้งเดิม เพราะความปลอดภัยไม่ได้อาศัยเพียงความยากในการคำนวณ แต่เกี่ยวข้องกับผลของการวัดในฟิสิกส์ควอนตัม
+
+ต่อจากนั้นงานศึกษาขยายไปยัง E91 ซึ่งใช้คู่อนุภาคพัวพันและการตรวจสอบความสัมพันธ์ผ่านแนวคิด \eng{Bell inequality} หรือ \eng{CHSH test} หากผลการวัดยังคงละเมิดขอบเขตแบบคลาสสิกได้ แสดงว่าคู่คีย์มีหลักฐานเชิงฟิสิกส์ว่าการดักฟังไม่ได้รบกวนระบบเกินขอบเขตที่ยอมรับได้ ในบริบทของงานนี้ E91 จึงถูกมองเป็นแหล่งกำเนิด seed ที่มีคุณสมบัติด้านการตรวจจับการดักฟัง
+
+\subsection{PQC, LWE และ FrodoKEM}
+\eng{Post-Quantum Cryptography} คือกลุ่มอัลกอริทึมที่ออกแบบให้ทนต่อผู้โจมตีที่มีคอมพิวเตอร์ควอนตัม FrodoKEM เป็นหนึ่งในระบบแลกคีย์ที่มีฐานความปลอดภัยบนปัญหา \eng{Learning With Errors} โดยแกนความยากอยู่ที่การกู้คืน secret จากสมการเชิงเส้นที่ถูกรบกวนด้วย noise
+
+ในรูปแบบย่อ สามารถเขียนความสัมพันธ์แบบ LWE ได้เป็น
+\[
+    B = AS + E \pmod q
+\]
+โดย $A$ เป็นเมทริกซ์สาธารณะ $S$ เป็น secret ขนาดเล็ก $E$ เป็น error/noise ขนาดเล็ก $B$ เป็นผลลัพธ์สาธารณะที่ใช้ประกอบการแลกคีย์ และ $q$ เป็นโมดูลัส ความยากเกิดจากการที่ผู้โจมตีต้องกู้คืน $S$ จาก $A$ และ $B$ ภายใต้การรบกวนของ $E$ และมิติของปัญหาที่ใหญ่
+
+\section{แนวคิด Hybrid PQC--QKD และ Masked-Salting}
+\subsection{แรงจูงใจเชิงเครือข่าย}
+หากใช้ QKD แบบตรงไปตรงมาในเครือข่ายขนาดใหญ่ โหนดจำนวนมากอาจต้องสร้างคีย์ควอนตัมระหว่างคู่สื่อสารตลอดเวลา ซึ่งทำให้ต้นทุนและภาระเชิงโครงสร้างสูงมาก แนวคิดของงานนี้คือไม่จำเป็นต้องให้ QKD แบกรับทุกการสื่อสารโดยตรง แต่ให้ QKD ทำหน้าที่เป็นแหล่งเอนโทรปีคุณภาพสูงเป็นระยะ แล้วใช้ PQC เป็นกลไกขยายผลสำหรับการแลกคีย์หรือป้องกันข้อมูลในชั้นที่ใช้งานจริง
+
+กล่าวอีกแบบหนึ่ง QKD ทำหน้าที่เหมือนฐานความเชื่อมั่นเชิงฟิสิกส์ ส่วน LWE/FrodoKEM ทำหน้าที่เป็นโครงสร้างคำนวณที่ปรับใช้ได้กว้างกว่า แนวคิดนี้อาจช่วยลดความจำเป็นในการพึ่งพาช่องสัญญาณ QKD ระหว่างทุกคู่โหนดตลอดเวลา แต่ยังคงนำประโยชน์ของ QKD เข้ามาเสริมความมั่นคงของระบบ
+
+\subsection{ขั้นตอนสร้างเมทริกซ์ M}
+ข้อเสนอหลักใน \suppfile{S06} คือใช้ seed จาก E91 หรือ $S_{e91}$ เพื่อสร้างเมทริกซ์ $M$ ตามลำดับดังนี้
+\[
+    S_{e91} \rightarrow \text{Dual-Path SHAKE-256} \rightarrow \text{XOR Mixing} \rightarrow (i,j,\mu) \rightarrow M
+\]
+โดยที่ $S_{e91}$ คือ seed ที่ได้จาก E91, $(i,j)$ คือตำแหน่งแถวและคอลัมน์ในเมทริกซ์, $\mu$ คือค่าที่นำไปเติมในตำแหน่งนั้น และ $M$ คือเมทริกซ์ \eng{Masked-Salting} ที่ได้จากกระบวนการทั้งหมด
+โดยใช้ domain separation แยกเส้นทางการขยายบิต เช่น
+\[
+    B_A = \text{SHAKE-256}(S_{e91} \parallel \text{``Path\_A''})
+\]
+\[
+    B_B = \text{SHAKE-256}(\text{SHA3}(S_{e91}) \parallel \text{``Path\_B''})
+\]
+โดยที่ $B_A$ และ $B_B$ คือบิตสตริงที่ได้จากการขยายคนละเส้นทาง และ \eng{Path\_A}, \eng{Path\_B} คือข้อความแบ่งโดเมนเพื่อไม่ให้สองเส้นทางใช้บริบทเดียวกัน
+จากนั้นนำ $B_A$ และ $B_B$ มาผสมด้วย XOR เพื่อสร้างบิตสตริงสุดท้าย
+\[
+    B_{final} = B_A \oplus B_B
+\]
+โดยที่ $B_{final}$ คือบิตสตริงสุดท้ายที่ใช้แปลงเป็นตำแหน่งและค่าในเมทริกซ์ $M$
+บิตสตริงดังกล่าวถูกแปลงเป็นตำแหน่งและค่าในเมทริกซ์ $M$ โดยอาจกำหนดให้ $M$ มีความเบาบาง เช่น เลือกเพียงบางตำแหน่งหรือหนึ่งจุดต่อหนึ่งคอลัมน์ เพื่อเพิ่มความไม่แน่นอนเชิงโครงสร้างโดยไม่เพิ่มภาระคำนวณเท่ากับการใช้เมทริกซ์หนาแน่น
+
+\subsection{ความซับซ้อนและเอนโทรปี}
+หากมองเฉพาะพื้นที่โครงสร้างของ $M$ ความซับซ้อนในการเดาอาจเขียนในรูป
+\[
+    W = \binom{N}{k}q^k
+\]
+เมื่อ $W$ คือจำนวนรูปแบบเชิงโครงสร้างที่ต้องพิจารณา, $N$ คือจำนวนตำแหน่งทั้งหมดของเมทริกซ์, $k$ คือจำนวนจุดที่ถูกเลือก และ $q$ คือจำนวนค่าที่เป็นไปได้ภายใต้โมดูลัส อย่างไรก็ตาม ต้องระวังการตีความ เนื่องจากเอนโทรปีที่มีผลจริงถูกจำกัดด้วย seed ตั้งต้นตามหลัก \eng{Information Processing Inequality} หาก seed มีเอนโทรปี 256 บิต เอนโทรปีแท้จริงของ $M$ จะไม่เกิน 256 บิต แม้พื้นที่เชิงโครงสร้างจะมีขนาดใหญ่กว่านั้นมาก
+
+ประโยชน์ของการสร้าง $M$ จึงไม่ใช่การอ้างว่าได้เอนโทรปีแท้จริงเกินกว่า seed แต่เป็นการแปลง seed ให้กลายเป็นโครงสร้างที่ตรวจเดาและวิเคราะห์ทางลัดได้ยากขึ้นภายในระบบแลตทิซ
+
+\section{ลำดับการศึกษาและ Supplementary Files}
+\begin{longtable}{>{\raggedright\arraybackslash}p{0.18\textwidth} >{\raggedright\arraybackslash}p{0.31\textwidth} >{\raggedright\arraybackslash}p{0.41\textwidth}}
+    \caption{ลำดับการศึกษาโดยสรุปจาก Supplementary Files ที่แนบประกอบรายงาน}\\
+    \toprule
+    ช่วงเวลา & Supplementary File & สาระสำคัญที่นำมาใช้ในรายงาน \\
+    \midrule
+    \endfirsthead
+    \toprule
+    ช่วงเวลา & Supplementary File & สาระสำคัญที่นำมาใช้ในรายงาน \\
+    \midrule
+    \endhead
+    15--19 ม.ค. 2026 & \suppfile{S01}: \code{S01\_BB84\_QKD.pdf}; \suppfile{S02}: \code{S02\_BB84\_Foundation.pdf} & ใช้เป็นฐานอธิบาย BB84, basis exchange, Eve detection, QBER และ privacy amplification \\
+    23 ม.ค. 2026 & \suppfile{S03}: \code{S03\_E91\_QKD.pdf}; \suppfile{S04}: \code{S04\_Quantum\_Networks.pdf} & ใช้เป็นฐานอธิบาย E91, entanglement, Bell state, CHSH และบริบทของ quantum network \\
+    30 ม.ค. 2026 & \suppfile{S05}: \code{S05\_PQC\_LWE.pdf} & ใช้เป็นฐานอธิบาย NIST PQC, lattice hardness, Toy-LWE และความถูกต้องของการถอดรหัส \\
+    13 ก.พ. 2026 & \suppfile{S06}: \code{S06\_Enhanced\_FrodoKEM.pdf} & ใช้นำเสนอโปรโตคอล E91 entropy สร้าง $M$ และประกอบ $A'=A+M \pmod q$ \\
+    18 ก.พ. 2026 & \suppfile{S07}: \code{S07\_Quantum\_Lattice.pdf} & ใช้เรียบเรียงแนวคิดการบรรจบกันของ physics entropy และ lattice hardness รวมถึง uniformity ของ $M$ \\
+    20 มี.ค. 2026 & \suppfile{S08}: \code{S08\_FrodoKEM\_Changes.pdf}; \suppfile{S09}: \code{S09\_FrodoKEM\_ChangesB.pdf} & ใช้อธิบายการเปลี่ยนแปลง original กับ v2 เช่น masked-salting module และ call path \\
+    27 มี.ค. 2026 & \suppfile{S10}: \code{S10\_Security\_Testing.pdf}; \suppfile{S11}: \code{S11\_Testing\_Presentation.pdf} & ใช้วางแนวทางทดสอบความปลอดภัยสามระยะและเตรียมโครงเรื่องสำหรับการนำเสนอ \\
+    27 มี.ค. 2026 & \suppfile{S12}: \code{S12\_Basis\_Distortion.pdf} & ใช้อธิบาย basis distortion เปรียบเทียบ $M=0$ กับ $M\neq0$ \\
+    \bottomrule
+\end{longtable}
+
+\section{ต้นแบบที่พัฒนาและผลการทดลอง}
+\subsection{โครงสร้างของต้นแบบ}
+ในส่วนของการทดลอง ผู้ทำการศึกษาได้พัฒนาต้นแบบภาษา C หลายเวอร์ชัน ตั้งแต่ต้นแบบคงที่ไปจนถึงเวอร์ชันที่กำหนดพารามิเตอร์ผ่าน \eng{Makefile} ได้ โดยเวอร์ชันล่าสุดที่ใช้เป็นฐานอ้างอิงคือ \code{qbuild\_status} รายละเอียดไฟล์ต้นแบบ ได้แนบเป็น source package ผ่าน Git repository พร้อม commit/tag เพื่อให้ตรวจสอบซ้ำได้
+
+โครงสร้างหลักของโปรแกรมที่ใช้ในการทดลองสรุปได้ดังนี้
+\begin{itemize}
+    \item \code{Generate\_A}: ขยาย seed 16 ไบต์ด้วย \eng{SHAKE128} เพื่อสร้างเมทริกซ์ $A$
+    \item \code{Generate\_S\_and\_E}: สุ่มเมทริกซ์ลับ $S$ และ error $E$ จากการแจกแจงขนาดเล็ก
+    \item \code{Compute\_B}: คำนวณ $B = AS + E \pmod q$
+    \item \code{Attack}: ลองเดา $S$ ทุกค่าภายในช่วง \code{[-SEARCH\_RANGE, SEARCH\_RANGE]} แล้วตรวจว่า error ที่เหลืออยู่เล็กพอหรือไม่
+    \item \code{main}: รันหลาย trial วัดเวลาโจมตี และรายงานค่าเฉลี่ย ความแปรปรวน ส่วนเบี่ยงเบนมาตรฐาน และอัตราสำเร็จ
+\end{itemize}
+
+\begin{figure}[H]
+    \centering
+    \begin{tikzpicture}[
+        node distance=1.15cm,
+        stage/.style={draw,rounded corners=4pt,align=center,text width=3.25cm,minimum height=2.05cm,fill=gray!6,inner sep=6pt},
+        arrow/.style={-{Latex[length=2.4mm]},line width=0.6pt},
+        label/.style={midway,above,font=\footnotesize,inner sep=1pt}
+    ]
+        \node[stage] (prep) {เตรียมข้อมูล\\[2pt]
+            Seed $\rightarrow A$ ด้วย SHAKE128\\
+            สุ่ม $S,E$};
+        \node[stage,right=of prep] (compute) {คำนวณ $B$\\[2pt]
+            $B = AS + E \pmod q$\\
+            ผลลัพธ์: $A,B$};
+        \node[stage,right=of compute] (attack) {Brute-force\\[2pt]
+            ใช้ $A,B$\\
+            กู้คืน $\hat{S}$};
+
+        \draw[arrow] (prep) -- node[label] {$A,S,E$} (compute);
+        \draw[arrow] (compute) -- node[label] {$A,B$} (attack);
+    \end{tikzpicture}
+    \caption{ภาพรวมเส้นทางข้อมูลในต้นแบบ LWE/FrodoKEM ขนาดเล็ก}
+\end{figure}
+
+\subsection{พารามิเตอร์และขอบเขตของต้นแบบ}
+ต้นแบบที่ใช้ในการทดลองกำหนดให้เมทริกซ์ทั้งหมดเป็นเมทริกซ์สี่เหลี่ยม $N \times N$ ซึ่งต่างจาก FrodoKEM จริงที่มีรูปทรงเมทริกซ์เฉพาะ เช่น $A$ ขนาด $n \times n$ และ $S,E$ ขนาด $n \times \bar n$ ดังนั้นรายงานนี้จึงนำเสนอผลในฐานะการทดลองเพื่อทำความเข้าใจพฤติกรรมของปัญหา LWE ในมิติเล็ก ไม่ใช่ benchmark ของ FrodoKEM จริง
+
+ความซับซ้อนของการ brute force ในต้นแบบประมาณได้จาก
+\[
+    (2\cdot \text{ERR}+1)^{N^2}
+\]
+โดยที่ $N$ คือมิติของเมทริกซ์สี่เหลี่ยมในต้นแบบ และ $\text{ERR}$ คือขอบเขตค่าสัมบูรณ์สูงสุดที่ใช้เดาแต่ละ entry ของ $S$ เช่น หาก $N=2$ และ $\text{ERR}=12$ จะมีพื้นที่ค้นหา $25^4 = 390{,}625$ candidates ซึ่งยังเล็กมาก แต่หาก $N=3$ และ $\text{ERR}=12$ จะเพิ่มเป็น $25^9 \approx 3.8\times 10^{12}$ candidates ซึ่งเริ่มไม่เหมาะสำหรับการทดสอบแบบตรงไปตรงมาแล้ว
+
+\subsection{ผลการทดลองที่ใช้ประกอบการนำเสนอ}
+ตารางต่อไปนี้สรุปผลที่ใช้ประกอบการนำเสนอแนวโน้มของต้นแบบและการรันบนเครื่องทดลองบางส่วน
+
+\begin{table}[H]
+    \centering
+    \caption{ตัวอย่างผลการทดลองจากต้นแบบ \code{qbuild\_status}}
+    \begin{tabular}{>{\raggedright\arraybackslash}p{0.28\textwidth} >{\raggedright\arraybackslash}p{0.24\textwidth} >{\raggedright\arraybackslash}p{0.34\textwidth}}
+        \toprule
+        พารามิเตอร์ & ผลลัพธ์ & หมายเหตุ \\
+        \midrule
+        $N=2$, $q=32768$, $\text{ERR}=4$ & Success $1000/1000$, average attack $0.0000527670$ วินาที & รันจริงในรอบจัดทำรายงานนี้ \\
+        $N=2$, $q=32768$, $\text{ERR}=12$ & Success ประมาณ $1000/1000$, average attack ประมาณ $0.00209$ วินาที & ผลจากการตรวจซ้ำต้นแบบ \\
+        $N=2$, $q=4096$, $\text{ERR}=12$ & Success ประมาณ $979/1000$ & เมื่อ modulus เล็กลง โอกาสเกิด candidate หลายตัวเพิ่มขึ้น \\
+        $N=2$, $q=256$, $\text{ERR}=12$ & Success ประมาณ $3/1000$ & modulus เล็กมากจนการตรวจ candidate คลุมเครือ \\
+        $N=3$, $q=32768$, $\text{ERR}=1$ & Success ประมาณ $20/1000$ & ขนาดมิติใหญ่ขึ้น แม้ช่วงเดาแคบก็เริ่มเห็นข้อจำกัด \\
+        \bottomrule
+    \end{tabular}
+\end{table}
+
+ผลดังกล่าวเป็นหลักฐานเบื้องต้นสำหรับแสดงแนวโน้มของมิติ โมดูลัส และช่วงการค้นหา แต่ยังไม่เพียงพอสำหรับสรุปความมั่นคงของ FrodoKEM ระดับใช้งานจริง
+
+\section{แนวทางการนำเสนอและประเมินความปลอดภัย}
+\subsection{ระยะที่ 1: Exhaustive Search}
+ในการนำเสนอระยะแรก งานศึกษานี้ใช้การเดาแบบครอบจักรวาลเป็น baseline เพื่อตอบคำถามว่าโครงสร้าง $A'$ ทำให้เกิดทางลัดในการแยก $M$ ออกจาก $A$ หรือไม่ หากเวลาการเดาและการกระจายผลลัพธ์ของระบบที่มี $M$ ไม่ต่างจากระบบเดิมอย่างมีนัยสำคัญ จะสนับสนุนสมมติฐานว่า \eng{Masked-Salting} ไม่สร้างลายเซ็นเชิงสถิติที่จับได้ง่าย
+
+\subsection{ระยะที่ 2: BKZ Efficiency Gap}
+ระยะที่สองเป็นแนวทางสำหรับการตรวจสอบอัลกอริทึมลดรูปแลตทิซ เช่น \eng{BKZ} โดยวัดว่าการมี $M$ ทำให้เกิด weak lattice หรือทำให้ค่า \eng{Root Hermite Factor} ดีขึ้นสำหรับผู้โจมตีหรือไม่ เป้าหมายของการนำเสนอส่วนนี้ไม่ใช่แค่พิสูจน์ว่า brute force ยาก แต่ต้องแสดงว่าเครื่องมือคณิตศาสตร์ที่ฉลาดกว่า brute force ก็ไม่ได้รับข้อได้เปรียบจากโครงสร้างใหม่
+
+\subsection{ระยะที่ 3: Hybrid Attack}
+ระยะที่สามกำหนดให้ผู้โจมตีใช้ BKZ ช่วยบีบพื้นที่ค้นหาก่อน แล้วจึง brute force เฉพาะส่วนที่เหลือ วิธีนี้เป็นสถานการณ์ที่เข้มขึ้น เพราะผู้โจมตีไม่ได้เดาสุ่มแบบทื่อ ๆ หากหลังจาก pruning แล้วพื้นที่ค้นหายังคงเติบโตแบบ exponential ก็จะสนับสนุนว่าระบบยังไม่ถูกลดรูปจนโจมตีได้จริง
+
+\subsection{ระยะที่ 4: Basis Distortion}
+ระยะที่สี่ใช้ชี้ให้เห็นความต่างระหว่างกรณี $M=0$ กับ $M\neq0$ โดยมองผลของ $M$ ในเชิงเรขาคณิตของแลตทิซ แนวคิดคือ $M$ ไม่ได้เพิ่มเพียงจำนวนทางเลือกเชิงคำนวณ แต่ทำให้ฐานของแลตทิซเกิดความผิดเพี้ยน เช่น ความเอียงของเวกเตอร์ มุมระหว่างเวกเตอร์ หรือระยะของ shortest vector ที่อัลกอริทึมคาดการณ์กับคำตอบจริง
+
+ในการนำเสนอขั้นต่อไป ควรใช้ผลเปรียบเทียบ success rate และตัวชี้วัดเชิงเรขาคณิตเพื่อแสดงว่ากลไกนี้มีผลในระดับ \eng{geometric disruption} ไม่ใช่เพียงเพิ่มงานคำนวณแบบผิวเผิน
+
+\section{อภิปรายผลและข้อจำกัด}
+\subsection{ประเด็นที่สนับสนุนแนวคิด}
+แนวคิด \eng{Hybrid PQC--QKD} มีจุดแข็งตรงที่ใช้ข้อดีของสองโลกพร้อมกัน QKD ให้ความมั่นใจเชิงฟิสิกส์ต่อ seed ตั้งต้น ส่วน PQC/LWE ให้โครงสร้างคำนวณที่นำไปใช้บนเครือข่ายได้ยืดหยุ่นกว่า การสร้าง $M$ จาก seed ดังกล่าวทำให้ Alice และ Bob มีความลับร่วมที่ไม่จำเป็นต้องส่งเมทริกซ์ทั้งหมดผ่านช่องสัญญาณสาธารณะ
+
+อีกประเด็นหนึ่งคือการใช้ sparse $M$ ช่วยควบคุม overhead ไม่ให้สูงเกินไป หากออกแบบให้มี domain separation และการกระจายตัวของตำแหน่งดีพอ อาจเพิ่มความคลุมเครือเชิงโครงสร้างโดยไม่ทำให้ระบบหนักเท่าการ perturb เมทริกซ์แบบหนาแน่น
+
+\subsection{ข้อจำกัดที่ต้องระบุอย่างชัดเจน}
+ข้อจำกัดสำคัญที่สุดที่ต้องระบุในการนำเสนอคือส่วนต้นแบบยังไม่ใช่ระบบ FrodoKEM เต็มรูปแบบ และไม่มี implementation ของ E91/QKD ในโค้ดจริง ดังนั้นรายงานนี้เป็นรายงานสรุปแนวคิดและการทดลองระดับเริ่มต้น ไม่ใช่หลักฐานความปลอดภัยสมบูรณ์ของโปรโตคอลใหม่
+
+นอกจากนี้ การอ้างความซับซ้อนเชิงโครงสร้างของ $M$ ต้องไม่สับสนกับเอนโทรปีแท้จริง หาก seed มี 256 บิต ความปลอดภัยของ seed ในเชิง brute force จะยังผูกกับขอบเขต 256 บิต แม้รูปแบบเมทริกซ์ที่สร้างได้จะมีจำนวนมาก การวิเคราะห์ในอนาคตจึงต้องแยกระหว่าง \eng{source entropy}, \eng{computational expansion} และ \eng{structural ambiguity} ให้ชัดเจน
+
+\subsection{สิ่งที่ได้เรียนรู้}
+จากลำดับการศึกษา ผู้ทำการศึกษาเห็นความสัมพันธ์ระหว่างสามชั้นของความปลอดภัย ได้แก่ ชั้นฟิสิกส์ควอนตัม ชั้นคณิตศาสตร์แลตทิซ และชั้น implementation จริง การออกแบบโปรโตคอลไม่สามารถหยุดอยู่ที่สูตรเชิงทฤษฎี แต่ต้องตรวจสอบ call path, correctness, benchmark overhead และเงื่อนไขที่ทำให้ผู้โจมตีอาจได้เปรียบ
+
+\section{สรุปและข้อเสนอแนะ}
+รายงานนี้เสนอแนวทางเสริม FrodoKEM ด้วย \eng{Masked-Salting} ที่สร้างจากเอนโทรปีของ E91 QKD โดยมีเป้าหมายระยะยาวคือทำให้ QKD มีบทบาทในเครือข่ายจริงได้มากขึ้น โดยไม่ต้องพึ่งพาการส่งคีย์ควอนตัมแบบ \eng{peer-to-peer} ตลอดเวลา แนวคิดหลักคือใช้ QKD เป็นแหล่ง seed และใช้ PQC/LWE เป็นเครื่องมือขยายผลเชิงระบบ
+
+ต้นแบบที่ทดลองแสดงให้เห็นพฤติกรรมพื้นฐานของสมการ $B=AS+E \pmod q$ และข้อจำกัดของการ brute force ในมิติเล็ก แต่ยังต้องพัฒนาต่ออีกมากก่อนจะกล่าวได้ว่าเป็นระบบ FrodoKEM+QKD ที่สมบูรณ์ ขั้นตอนถัดไปควรรวมถึงการ implement การสร้าง $M$ จริงจาก seed, การเชื่อมกับ FrodoKEM implementation มาตรฐาน, การทดสอบ correctness ของ key exchange, การวิเคราะห์ overhead แยกตาม module และการทดลองโจมตีด้วย BKZ/hybrid attack ในกรอบที่ทำซ้ำได้
+
+โดยสรุป งานนี้มีคุณค่าในฐานะการวางสะพานระหว่าง QKD และ PQC: ไม่ใช่การแทนที่กัน แต่เป็นการใช้ QKD เพื่อเติมเอนโทรปีและใช้ PQC เพื่อทำให้แนวคิดนั้นขยายไปสู่เครือข่ายจริงได้อย่างสมเหตุสมผลมากขึ้น
+
+\section{แนวทางส่งมอบเพื่อการตรวจสอบ}
+เพื่อให้บุคคลที่สามสามารถตรวจสอบที่มาของงานได้ รายงานฉบับนี้พร้อม \eng{Supplementary Files} และ source code ต้นแบบได้ถูกจัดเก็บและ push ขึ้น GitHub repository เป็นชุดเดียวกันแล้วที่
+\[
+    \text{\url{https://github.com/ziannsnp/Individual-Study-II-PQC-E91-hybrid-.git}}
+\]
+โดยแยกเอกสารประกอบออกจากรายการเอกสารอ้างอิงทางวิชาการ และกำหนดชื่อไฟล์ PDF เป็นรหัส S01--S12 ตามตารางในรายงาน
+
+repository ดังกล่าวประกอบด้วยไฟล์หลักสำหรับการตรวจสอบดังนี้
+\begin{itemize}
+    \item ไฟล์รายงาน \code{final\_report.tex} และ \code{final\_report.pdf}
+    \item ไฟล์ PDF ประกอบการศึกษาในโฟลเดอร์ \code{Supplementary Files} โดยใช้ชื่อ S01--S12
+    \item source code ของต้นแบบ LWE/FrodoKEM-inspired toy model โดยเฉพาะเวอร์ชัน \code{qbuild\_status}
+    \item ไฟล์ manifest ที่ระบุชื่อไฟล์จริง เส้นทางไฟล์ และคำอธิบายสั้น ๆ ของแต่ละ supplementary file
+    \item commit hash ของเวอร์ชันที่ส่ง เพื่อให้ผู้ตรวจสอบเปิดดูชุดไฟล์เดียวกับที่ใช้เขียนรายงานได้จาก GitHub repository เดียวกัน
+\end{itemize}
+
+โดยการอ้างถึง \suppfile{S01}--\suppfile{S12} ในรายงานจะอ้างถึงหลักฐานประกอบที่ตรวจสอบย้อนกลับได้จาก repository เดียวกับไฟล์รายงานและ source code ต้นแบบ โดยใช้ repository link เป็นหลักฐานยืนยันชุดไฟล์ที่ใช้ตรวจสอบ
+
+\clearpage
+\section*{เอกสารอ้างอิงและ Supplementary Files}
+\addcontentsline{toc}{section}{เอกสารอ้างอิงและ Supplementary Files}
+\begin{enumerate}[label={[\arabic*]}]
+    \item E. Alkim, J. W. Bos, L. Ducas, P. Longa, I. Mironov, M. Naehrig, V. Nikolaenko, C. Peikert, A. Raghunathan, and D. Stebila, ``FrodoKEM: Learning With Errors Key Encapsulation,'' submission to the NIST Post-Quantum Cryptography process.
+    \item C. H. Bennett and G. Brassard, ``Quantum cryptography: Public key distribution and coin tossing,'' Proceedings of IEEE International Conference on Computers, Systems and Signal Processing, 1984.
+    \item A. K. Ekert, ``Quantum cryptography based on Bell's theorem,'' Physical Review Letters, vol. 67, no. 6, pp. 661--663, 1991.
+    \item National Institute of Standards and Technology, ``Post-Quantum Cryptography Standardization,'' \url{https://csrc.nist.gov/projects/post-quantum-cryptography}.
+    \item \suppfile{S01}--\suppfile{S12}: เอกสาร PDF ประกอบการศึกษาในโฟลเดอร์ \code{Supplementary Files} ซึ่งครอบคลุม QKD, E91, PQC/LWE, Enhancement FrodoKEM, การเปลี่ยนแปลง FrodoKEM v2, แนวทางการทดสอบความปลอดภัย และการวิเคราะห์ $M=0$ เทียบกับ $M\neq0$.
+    \item Source code ของต้นแบบ LWE/FrodoKEM-inspired toy model ได้แก่เวอร์ชันหลักของต้นแบบและ \code{qbuild\_status}; ตรวจสอบได้จาก GitHub repository ที่ระบุในหัวข้อแนวทางส่งมอบ 
+\end{enumerate}
+
+\end{document}

@@ -1,0 +1,28 @@
+# macOS
+.DS_Store
+
+# LaTeX build artifacts
+*.aux
+*.bbl
+*.bcf
+*.blg
+*.fdb_latexmk
+*.fls
+*.lof
+*.log
+*.lot
+*.out
+*.run.xml
+*.synctex.gz
+*.toc
+*.xdv
+
+# C build artifacts and local executables
+*.o
+*.d
+frodo_test
+
+# Temporary archives and local scratch output
+*.tmp
+*.temp
+

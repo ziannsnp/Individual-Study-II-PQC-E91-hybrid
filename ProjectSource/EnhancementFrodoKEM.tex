@@ -1,0 +1,152 @@
+\documentclass[twocolumn, a4paper]{article}
+
+% --- Packages ---
+\usepackage{fontspec}
+\usepackage{amsmath, amsfonts, amssymb}
+\usepackage{geometry}
+\usepackage{titlesec}
+\usepackage{fancyhdr}
+\usepackage{algorithm}
+\usepackage{algpseudocode}
+
+% --- Font & Language Setup (XeLaTeX) ---
+\setmainfont{TH Sarabun New}
+\XeTeXlinebreaklocale "th"
+\XeTeXlinebreakskip = 0pt plus 1pt
+
+% --- Layout ---
+\geometry{top=2.5cm, bottom=2.5cm, left=1.5cm, right=1.5cm}
+\setlength{\columnsep}{0.6cm}
+
+% --- Header/Footer ---
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{Protocol: Quantum-Driven Masked-Salting}
+\fancyfoot[C]{\thepage}
+
+\title{\textbf{โปรโตคอลการสร้าง Masked-Salting Matrix $M$ สำหรับ FrodoKEM โดยใช้เอนโทรปีจาก E91 และ Dual-Path XOF Mixing}}
+\author{Porrutai Chinkarnjanaroj}
+\date{\today}
+
+\begin{document}
+	
+	\maketitle
+	
+	\begin{abstract}
+		บทความนี้นำเสนอโปรโตคอลการสร้าง Matrix $M$ เพื่อใช้ในโครงสร้าง Semi-Private Key ($A' = A + M$) สำหรับ FrodoKEM โดยอาศัยความสุ่มสมบูรณ์แบบจากโปรโตคอล E91 (QKD) ร่วมกับการขยายบิตสตริงผ่านฟังก์ชัน SHAKE-256 แบบสองเส้นทาง (Dual-Path) เพื่อเพิ่มความซับซ้อนและประสิทธิภาพในการป้องกันการโจมตีระดับควอนตัม
+	\end{abstract}
+	
+	\section{บทนำ}
+	ในระบบ Post-Quantum Cryptography (PQC) เช่น FrodoKEM ความปลอดภัยหลักขึ้นอยู่กับปัญหา Learning With Errors (LWE) อย่างไรก็ตาม การใช้ Public Key $A$ ที่เป็นค่าคงที่อาจเปิดโอกาสให้ผู้โจมตีวิเคราะห์โครงสร้าง Lattice ได้ โปรโตคอลนี้จึงเสนอการสร้าง Matrix $M$ แบบเบาบาง (Sparse) เพื่อทำการ "Salt" ลงบน Matrix $A$ เดิม โดยใช้ทรัพยากรจาก Quantum Key Distribution (QKD) เพื่อความปลอดภัยสูงสุด
+	
+	\section{พารามิเตอร์ที่เกี่ยวข้อง}
+	\begin{itemize}
+		\item $n_x, n_y$: ขนาดมิติของ Matrix $A$ ใน FrodoKEM
+		\item $q$: ค่า Modulus (เช่น $2^{15}$ สำหรับ Frodo-640)
+		\item $k$: จำนวนจุดพิกัดที่จะทำการเติมค่า (Multi-Point)
+		\item $S_{e91}$: Bitstring ตั้งต้นจาก E91 ($\geq 256$ บิต)
+	\end{itemize}
+	
+	\section{ขั้นตอนโปรโตคอล}
+	
+	\subsection{ระยะที่ 1: การกำเนิด Entropy (E91)}
+	Alice และ Bob ทำการสร้าง Shared Bitstring ผ่านโปรโตคอล E91 จนได้ $S_{e91}$ ที่ผ่านกระบวนการ Error Correction และ Privacy Amplification แล้ว เพื่อให้แน่ใจว่าทั้งสองฝ่ายมี Seed ที่ตรงกัน
+	
+	\subsection{ระยะที่ 2: การขยายบิตสตริง (Dual-Path XOF)}
+	นำ $S_{e91}$ มาขยายผ่าน Extendable-Output Function (XOF) โดยใช้ SHAKE-256 เพื่อสร้างบิตสตริงยาว $L$ สองชุดที่มีความต่างกันด้วย Domain Separation:
+	\begin{equation}
+		B_A = \text{SHAKE-256}(S_{e91} \parallel \text{"Path\_A"})
+	\end{equation}
+	\begin{equation}
+		B_B = \text{SHAKE-256}(\text{SHA3}(S_{e91}) \parallel \text{"Path\_B"})
+	\end{equation}
+	
+	\subsection{ระยะที่ 3: การผสมและสรุปบิต (XOR Mixing)}
+	ทำการผสมบิตจากทั้งสองเส้นทางด้วยการ XOR เพื่อสร้าง Finalized Bitstring ($B_{final}$):
+	\begin{equation}
+		B_{final} = B_A \oplus B_B
+	\end{equation}
+	กระบวนการนี้ช่วยเพิ่มความหนาแน่นของ Entropy และป้องกันจุดอ่อนที่อาจเกิดขึ้นจากการใช้ XOF เพียงเส้นทางเดียว
+	
+	\subsection{ระยะที่ 4: การสร้าง Matrix $M$ (Multi-Point)}
+	แบ่ง $B_{final}$ ออกเป็น $k$ ส่วน โดยแต่ละส่วนประกอบด้วยข้อมูลสำหรับ 1 พิกัดพิกัด $(i, j)$ และค่า $\mu$ ดังนี้:
+	\begin{enumerate}
+		\item $i_m = \text{Integer}(b_{row, m}) \pmod{n_x}$
+		\item $j_m = \text{Integer}(b_{col, m}) \pmod{n_y}$
+		\item $\mu_m = \text{Integer}(b_{val, m}) \pmod{q}$
+	\end{enumerate}
+	สร้าง Matrix $M$ โดยกำหนดให้:
+	\begin{equation}
+		M_{r, c} = \sum_{m=1}^{k} \delta(r, i_m) \delta(c, j_m) \mu_m \pmod{q}
+	\end{equation}
+	
+	\section{การสร้าง Semi-Private Key}
+	สุดท้าย นำ Matrix $M$ ไปบวกเข้ากับ Public Key $A$ เดิม:
+	\begin{equation}
+		A' = (A + M) \pmod{q}
+	\end{equation}
+	เนื่องจาก Alice และ Bob มี $S_{e91}$ เดียวกัน ทั้งคู่จะสามารถสร้าง $A'$ ที่ตรงกันได้ ส่งผลให้กระบวนการ Encapsulation และ Decapsulation ของ FrodoKEM ดำเนินการต่อไปได้โดยไม่มีข้อผิดพลาด (Zero Failure Rate)
+	
+	\section{วิเคราะห์ความปลอดภัย}
+	\begin{enumerate}
+		\item \textbf{Quantum Resistance:} การใช้ SHAKE-256 และ Seed 256 บิต ให้ความปลอดภัยระดับ 128 บิตต่อการโจมตีด้วย Grover's Algorithm
+		\item \textbf{Complexity:} พื้นที่การสุ่ม (Search Space) ของ $M$ มีขนาดมหาศาลเนื่องจากเป็นการเลือก $k$ จุดจาก $n_x \times n_y$ ตำแหน่ง พร้อมค่า $\mu$ ที่ผันแปร
+		\item \textbf{Information Theoretic:} รากฐานความลับเริ่มจากฟิสิกส์ควอนตัม (E91) ซึ่งป้องกันการดักฟังเชิงรับ (Passive Eavesdropping) ได้อย่างสมบูรณ์
+	\end{enumerate}
+	
+	ความยากในการสุ่มเดา Matrix $M$ (Brute-force Complexity: $W$) คำนวณได้จากผลคูณของพื้นที่การเลือกตำแหน่งและพื้นที่ของค่าในตำแหน่งนั้น ๆ ดังนี้:
+	\begin{equation}
+		W = \binom{N}{k} \times q^k
+	\end{equation}
+	
+	เมื่อพิจารณาในกรณีพารามิเตอร์ FrodoKEM-640 ($N = 409,600, q = 2^{15}$) และกำหนดให้ $k = 64$:
+	\begin{itemize}
+		\item จำนวนวิธีเลือกพิกัด: $\binom{409,600}{64} \approx 2^{897}$
+		\item จำนวนวิธีเลือกค่า $\mu$: $(2^{15})^{64} \approx 2^{960}$
+		\item \textbf{ความซับซ้อนรวม:} $W \approx 2^{1857}$
+	\end{itemize}
+	
+	ในมุมมองของการโจมตีด้วยคอมพิวเตอร์ควอนตัมผ่าน Grover's Algorithm ความซับซ้อนจะถูกลดทอนลงเหลือ $\sqrt{W} \approx 2^{928.5}$ ซึ่งยังคงสูงกว่ามาตรฐาน AES-256 และความต้องการของ NIST ระดับสูงสุดอย่างมหาศาล
+	
+	\section{การป้องกันการโจมตี Lattice Reduction}
+	อัลกอริทึมการลดทอน Lattice (เช่น BKZ) จำเป็นต้องทราบฐาน (Basis) หรือ Matrix $A'$ ที่ถูกต้อง หากผู้โจมตีทราบเพียง Matrix $A$ สาธารณะ แต่ไม่ทราบ Matrix $M$ จะส่งผลให้:
+	\begin{enumerate}
+		\item โครงสร้าง Lattice ที่ผู้โจมตีวิเคราะห์จะผิดเพี้ยนไปจากความจริง
+		\item ค่า $MS$ ในสมการ $B = (A+M)S + E$ จะทำหน้าที่เป็น Noise ขนาดใหญ่ที่มีโครงสร้างซับซ้อน ทำให้กระบวนการหา Shortest Vector Problem (SVP) ล้มเหลว
+	\end{enumerate}
+	
+	% --- ส่วนที่เพิ่มใหม่: การวิเคราะห์เอนโทรปีและความซับซ้อน ---
+	
+	\section{การวิเคราะห์เอนโทรปี (Entropy Analysis)}
+	เอนโทรปีของ Matrix $M$ สามารถวิเคราะห์ได้ผ่านสองมิติ คือ เอนโทรปีเชิงโครงสร้าง และเอนโทรปีของแหล่งกำเนิดข้อมูล:
+	
+	\subsection{เอนโทรปีเชิงโครงสร้าง (Combinatorial Entropy)}
+	เอนโทรปีรวมของ Matrix $M$ ($H_M$) เกิดจากผลรวมของความไม่แน่นอนในตำแหน่งพิกัด ($H_{pos}$) และค่าเกลือ ($H_{val}$):
+	\begin{equation}
+		H_{pos} = \log_2 \binom{n_x \cdot n_y}{k} \approx \log_2 \binom{409,600}{64} \approx 897.4 \text{ bits}
+	\end{equation}
+	\begin{equation}
+		H_{val} = \log_2 (q^k) = 64 \times 15 = 960 \text{ bits}
+	\end{equation}
+	ส่งผลให้เอนโทรปีเชิงโครงสร้างรวมมีค่าสูงถึง $H_M \approx 1,857.4$ บิต
+	
+	\subsection{ข้อจำกัดเอนโทรปีและแหล่งกำเนิด (Source Entropy Bottleneck)}
+	ตามหลัก Information Processing Inequality แม้โครงสร้าง $M$ จะมีรูปแบบที่เป็นไปได้มหาศาล แต่เอนโทรปีที่มีผลบังคับใช้จริง (Effective Entropy) จะถูกจำกัดโดยขนาดของ Seed จาก E91 ($S_{e91}$):
+	\begin{equation}
+		H_{effective} = \min(H_M, H(S_{e91})) = 256 \text{ bits}
+	\end{equation}
+	แม้เอนโทรปีที่แท้จริงจะอยู่ที่ 256 บิต แต่การขยายเอนโทรปีเชิงคำนวณ (Computational Entropy) ไปถึง 1,857 บิต มีความจำเป็นอย่างยิ่งเพื่อป้องกันการโจมตีแบบทางลัด (Shortcut Attacks) ที่มุ่งเน้นการวิเคราะห์โครงสร้างของ Matrix โดยตรง
+	
+	
+	\section{ความไม่แตกต่างเชิงสถิติ (Indistinguishability)}
+	การกำหนดให้ $\mu_m \in [0, q-1]$ โดยยอมให้ค่าเกลือเป็นศูนย์ได้นั้น สอดคล้องกับปรัชญาทางรหัสลับที่ว่า \textit{"การไม่ซ่อนคือการซ่อนชนิดหนึ่ง"} (The lack of concealment is a form of concealment):
+	\begin{enumerate}
+		\item \textbf{Statistical Uniformity:} Matrix $A'$ จะมีการกระจายตัวแบบ Uniform บน Group $\mathbb{Z}_q$ ทำให้แยกแยะไม่ได้จาก Matrix สุ่มทั่วไปในเชิงสถิติ
+		\item \textbf{Ambiguity:} หากผู้โจมตีเปรียบเทียบ $A$ และ $A'$ แล้วพบพิกัดที่ค่าตรงกัน เขาจะไม่สามารถสรุปได้ว่าพิกัดนั้นไม่ได้ถูกเลือกโดยโปรโตคอล เนื่องจากอาจเป็นจุดที่ $\mu_m = 0$ ความคลุมเครือนี้ช่วยทำลายสมมติฐานในการวิเคราะห์ความแตกต่าง (Differential Analysis)
+	\end{enumerate}
+	
+	
+	\section{สรุป}
+	โปรโตคอลนี้ช่วยยกระดับความปลอดภัยของ FrodoKEM จากระดับ Mathematical Complexity ไปสู่ระดับ Hybrid Security ที่ผสานพลังของฟิสิกส์ควอนตัมและการคำนวณสมัยใหม่เข้าด้วยกันได้อย่างมีประสิทธิภาพ
+	
+\end{document}
